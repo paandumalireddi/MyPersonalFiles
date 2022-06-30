@@ -1,0 +1,260 @@
+import os
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import stats
+from sklearn import preprocessing
+
+from scipy.stats import pareto
+#import re
+
+path='C:\\Users\\mpandavu\\RoutingAnalytics';
+path1="C:\\Users\\mpandavu\\OneDrive - UHG\\CPS-documents\\MachineLearning\\Routing"
+train_20072021=pd.read_csv(os.path.join(path,'20-07-2021.csv'))
+train_19072021=pd.read_csv(os.path.join(path1,'19-07-2021.csv'))
+#frames=[train_20072021,train_19072021]
+#train_20072021=pd.concat(frames)
+train_20072021.info
+train_20072021.head()
+train_20072021.columns
+train_20072021['claim_type']=""
+
+
+#train_20072021[train_20072021.MED_SERV_PRCD_CD.str.extract(r'([A]\d\d\d\d)')]
+#sample =train_20072021.MED_SERV_PRCD_CD.str.extract(r'([A]\d\d\d\d)')
+
+#categorizing olgst and vision claims
+train_20072021.BILLING_TYPE_CODE.value_counts()
+conditions = [(train_20072021.SPCLTY_SEL_CD=='B02'),
+              ((train_20072021.SPCLTY_SEL_CD=='V03')| (train_20072021.SPCLTY_SEL_CD=='V04'))
+              #(train_20072021.MED_SERV_PRCD_CD.str.extract(r'([A]\d\d\d\d)'))
+         ]
+values=['OLGST','VISION',]
+train_20072021['claim_type']=np.select(conditions,values)
+
+#removing duplicate data
+train_unique_mcrfm_roll_cd=train_20072021.MCRFM_ROLL_CD.unique()
+#sample=train_20072021['MCRFM_ROLL_CD'] == roll_cd
+#type(sample) 
+
+train_20072021_claim_type_0=train_20072021[train_20072021.claim_type=='0']
+train_20072021_claim_type_0.drop(labels='SPCLTY_SEL_CD',axis=1,inplace=True)
+train_20072021_claim_type_0.drop_duplicates(inplace=True)
+train_20072021_olgst_vision=train_20072021[~(train_20072021.claim_type=='0')]
+for roll_cd in train_20072021_olgst_vision.MCRFM_ROLL_CD:
+    indexNames=train_20072021_claim_type_0[(train_20072021_claim_type_0.MCRFM_ROLL_CD==roll_cd)].index
+    train_20072021_claim_type_0.drop(indexNames,inplace=True)
+frames=[train_20072021_claim_type_0,train_20072021_olgst_vision]
+final_data_20072021=pd.concat(frames)
+final_data_20072021.drop(labels='SPCLTY_SEL_CD',axis=1,inplace=True)
+#sns.heatmap(,annot=True)
+final_data_20072021.info()
+final_data_20072021.columns
+sns.factorplot(data=final_data_20072021, hue="BILLING_TYPE_CODE",x='UPDT_USER_ID',kind="count",size=6)
+#
+sns.FacetGrid(final_data_20072021, hue="UPDT_USER_ID",size=8).map(sns.kdeplot, "CHRG_AMT").add_legend()
+#EDA starts here
+
+#sns.factorplot(data=fial_data_20072021, hue="COND_CL_CD",x='UPDT_USER_ID',kind="count",size=6)
+
+
+
+
+###################################################
+
+#categorizing olgst and vision claims
+#train_19072021.BILLING_TYPE_CODE.value_counts()
+conditions = [(train_19072021.SPCLTY_SEL_CD=='B02'),
+              ((train_19072021.SPCLTY_SEL_CD=='V03')| (train_19072021.SPCLTY_SEL_CD=='V04'))
+              #(train_19072021.MED_SERV_PRCD_CD.str.extract(r'([A]\d\d\d\d)'))
+         ]
+#values=['OLGST','VISION',]
+
+train_19072021['claim_type']=np.select(conditions,values)
+
+#removing duplicate data
+train_unique_mcrfm_roll_cd=train_19072021.MCRFM_ROLL_CD.unique()
+#sample=train_19072021['MCRFM_ROLL_CD'] == roll_cd
+#type(sample) 
+
+train_19072021_claim_type_0=train_19072021[train_19072021.claim_type=='0']
+train_19072021_claim_type_0.drop(labels='SPCLTY_SEL_CD',axis=1,inplace=True)
+train_19072021_claim_type_0.drop_duplicates(inplace=True)
+train_19072021_olgst_vision=train_19072021[~(train_19072021.claim_type=='0')]
+for roll_cd in train_19072021_olgst_vision.MCRFM_ROLL_CD:
+    indexNames=train_19072021_claim_type_0[(train_19072021_claim_type_0.MCRFM_ROLL_CD==roll_cd)].index
+    train_19072021_claim_type_0.drop(indexNames,inplace=True)
+frames=[train_19072021_claim_type_0,train_19072021_olgst_vision]
+final_data_19072021=pd.concat(frames)
+final_data_19072021.drop(labels='SPCLTY_SEL_CD',axis=1,inplace=True)
+
+sns.factorplot(data=final_data_19072021, hue="BILLING_TYPE_CODE",x='UPDT_USER_ID',kind="count",size=6)
+#
+sns.FacetGrid(final_data_19072021, hue="UPDT_USER_ID",size=8).map(sns.kdeplot, "CHRG_AMT").add_legend()
+
+frames_finalData=[final_data_19072021,final_data_20072021]
+
+final_data=pd.concat(frames_finalData)
+
+final_data.info()
+final_data1=final_data.copy()
+#BILLING_TYPE_CODE
+final_data.BILLING_TYPE_CODE.unique().size#2
+sns.countplot(x='BILLING_TYPE_CODE',data=final_data)
+sns.factorplot(data=final_data, hue="UPDT_USER_ID",x='BILLING_TYPE_CODE',kind="count",size=6)
+final_data.BILLING_TYPE_CODE.value_counts()
+
+
+
+
+#CHRG_AMT
+final_data.CHRG_AMT.unique().size #16508 float
+final_data.CHRG_AMT.describe()
+sns.boxplot(x='CHRG_AMT',data=final_data)#Most of the records are 0 to 20000
+sns.distplot(final_data.CHRG_AMT)
+final_data.CHRG_AMT.value_counts(bins=50)
+
+#COND_CL_CD
+final_data.COND_CL_CD.unique().size #6086
+
+
+final_data_cond_cl_filter=final_data1.groupby("COND_CL_CD").filter(lambda x: len(x)>1)
+final_data_cond_cl_filter.COND_CL_CD.unique().size
+final_data_cond_cl_filter.COND_CL_CD.value_counts()
+final_data.group('COND_CL_CD')
+
+
+
+#DNTL_SERV_PRCD_CD
+final_data.DNTL_SERV_PRCD_CD.value_counts()# this dataset doesnt have any dental claims
+
+#GRP_STAT_CL_CD
+final_data.GRP_STAT_CL_CD.unique().size #828
+final_data_cond_cl_filter.GRP_STAT_CL_CD.value_counts()
+sns.factorplot(data=final_data, hue="UPDT_USER_ID",x='GRP_STAT_CL_CD',kind="count",size=6)
+
+
+df_heatmap = pd.pivot_table(final_data,index='GRP_STAT_CL_CD',columns=['UPDT_USER_ID'],aggfunc='count')
+sns.heatmap(df_heatmap,annot=True)
+plt.show()
+
+#IRS_NBR
+final_data.IRS_NBR.unique().size #21722
+final_data.IRS_NBR.value_counts()
+
+#MCRFM_ROLL_CD
+final_data.MCRFM_ROLL_CD.unique().size#79040
+final_data1.drop(labels='MCRFM_ROLL_CD',axis=0,inplace=True)
+#
+
+
+#MED_SERV_PRCD_CD
+final_data.MED_SERV_PRCD_CD.value_counts()
+final_data.MED_SERV_PRCD_CD.unique().size#3922
+
+#OTH_INS_CD
+final_data.OTH_INS_CD.unique().size#15
+sns.factorplot(data=final_data, hue="UPDT_USER_ID",x='OTH_INS_CD',kind="count",size=6)
+oth_ins_observed = pd.crosstab(final_data.UPDT_USER_ID, final_data.OTH_INS_CD)
+stats.chi2_contingency(observed = oth_ins_observed)  
+
+
+#OTH_INS_ELIG_AMT
+final_data.OTH_INS_ELIG_AMT.unique().size#4
+
+oth_ins_elig_observed = pd.crosstab(final_data.UPDT_USER_ID, final_data.OTH_INS_ELIG_AMT)
+stats.chi2_contingency(observed = oth_ins_elig_observed)  
+
+final_data[final_data.OTH_INS_ELIG_AMT==19.70]['MCRFM_ROLL_CD']
+
+#POL_NBR
+final_data.POL_NBR.unique().size#3727
+#PRFDSG_TXT
+final_data.PRFDSG_TXT.unique().size#127
+
+prf_dsg_observed = pd.crosstab(final_data.PRFDSG_TXT, final_data.UPDT_USER_ID)
+stats.chi2_contingency(observed = prf_dsg_observed)  
+
+
+
+plt.figure(figsize=(12,8))
+sns.heatmap(prf_dsg_observed, annot=True, cmap="YlGnBu")
+
+#PRVD_SPCLTY_CD
+final_data.PRVD_SPCLTY_CD.unique().size#173
+
+#RVNU_CD
+final_data.RVNU_CD.unique().size#274
+
+#SERV_PLACE_CD
+final_data.SERV_PLACE_CD.unique().size#14
+sns.distplot(final_data.SERV_PLACE_CD)
+sns.factorplot(data=final_data, hue="UPDT_USER_ID",x='SERV_PLACE_CD',kind="count",size=6)
+
+#SERV_PSTL_LOC_CD
+final_data.SERV_PSTL_LOC_CD.unique().size#9896
+final_data.SERV_PSTL_LOC_CD.value_counts()
+#SERV_ST_CD
+final_data.SERV_ST_CD.unique().size#53
+
+#SERV_TYPE_CD
+final_data.SERV_TYPE_CD.unique().size#33
+
+#TOD_CD
+final_data.TOD_CD.unique().size#9
+final_data.TOD_CD.value_counts()
+tod_code_observed = pd.crosstab(final_data.UPDT_USER_ID, final_data.TOD_CD)
+stats.chi2_contingency(observed = tod_code_observed) 
+
+#TOT_BLNG_AMT
+final_data.TOT_BLNG_AMT.unique().size#18578
+final_data[final_data.TOT_BLNG_AMT<0]['TOT_BLNG_AMT']
+
+sns.FacetGrid(final_data, hue="UPDT_USER_ID",size=8).map(sns.kdeplot, "TOT_BLNG_AMT").add_legend()
+#UPDT_USER_ID
+final_data.UPDT_USER_ID.unique().size#17
+
+#claim_type
+sns.factorplot(data=final_data, hue="UPDT_USER_ID",x='claim_type',kind="count",size=6)
+observed = pd.crosstab(final_data.UPDT_USER_ID, final_data.claim_type)
+stats.chi2_contingency(observed = observed)  
+
+
+
+tmp = final_data[['TOT_BLNG_AMT','CHRG_AMT','OTH_INS_CD','OTH_INS_ELIG_AMT']]
+sns.heatmap(tmp.corr())#
+
+#Removing Nan
+for column in final_data.columns:
+    print('column name',column,' count is ',final_data[column].isnull().values.any())
+    #SERV_PSTL_LOC_CD,
+final_data.SERV_PSTL_LOC_CD.isnull().values.any()
+final_data[final_data['SERV_PSTL_LOC_CD'].isnull()]=0
+
+#sns.pairplot(final_data)
+final_data_encode=final_data.copy()
+final_data_encode.info()
+#encode target  variable 
+from sklearn.preprocessing import LabelEncoder
+label_Encoder= LabelEncoder()
+final_data['encoded_userid']=label_Encoder.fit_transform(final_data.UPDT_USER_ID)
+
+#encode 
+#final_data.drop(labels=['COND_CL_CD_encoded','BILLING_TYPE_CODE_encoded'],axis=1,inplace=True)
+final_data_encode.drop(labels=['MCRFM_ROLL_CD','POL_NBR','UPDT_USER_ID','IRS_NBR'],axis=1,inplace=True)
+from category_encoders.cat_boost import CatBoostEncoder
+CBE_encoder = CatBoostEncoder()
+final_data_encode[['BILLING_TYPE_CODE','COND_CL_CD','DNTL_SERV_PRCD_CD','GRP_STAT_CL_CD',
+'MED_SERV_PRCD_CD','OTH_INS_CD','PRFDSG_TXT','PRVD_SPCLTY_CD','RVNU_CD','SERV_ST_CD']]= CBE_encoder.fit_transform(final_data[['BILLING_TYPE_CODE','COND_CL_CD','DNTL_SERV_PRCD_CD','GRP_STAT_CL_CD',
+'MED_SERV_PRCD_CD','OTH_INS_CD','PRFDSG_TXT','PRVD_SPCLTY_CD','RVNU_CD','SERV_ST_CD']], final_data['encoded_userid'])
+
+final_data_encode.info()
+
+from sklearn import metrics, model_selection, ensemble, neighbors, linear_model, decomposition, manifold, feature_selection, preprocessing, pipeline, impute, compose, svm
+
+numerical_pipeline = pipeline.Pipeline([
+                    ('imputer', impute.SimpleImputer() ),
+                    ('scaler', preprocessing.StandardScaler() )
+                ])
+

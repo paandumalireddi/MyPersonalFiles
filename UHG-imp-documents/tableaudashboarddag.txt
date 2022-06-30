@@ -1,0 +1,61 @@
+from airflow.models import DAG, Variable
+from airflow.contrib.operators.ssh_operator import SSHOperator
+from datetime import datetime, timedelta
+import airflow, os, logging
+import airflow.settings
+from airflow.utils.dates import days_ago
+from airflow.operators.email_operator import EmailOperator
+from airflow.models import TaskInstance
+from airflow.operators.http_operator import SimpleHttpOperator
+import pickle
+START_DATE = airflow.utils.dates.days_ago(1)
+SCHEDULE_INTERVAL = "30 9 * * 1-6"
+
+log = logging.getLogger(__name__)
+
+
+# DAG for airflow task
+dag_email_recipient = "malireddi_pandavulu@optum.com"
+# These args will get passed on to the SSH operator
+default_args = {
+    'owner': 'mpandavu',
+    'depends_on_past': False,
+    'email': ['malireddi_pandavulu@optum.com'],
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'start_date': START_DATE,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=1),
+}
+
+
+dag = DAG(
+    'dag_umr_bgt_s_93_tableau_dashboard',
+    default_args=default_args,
+    description='How to use the SSH Operator?',
+    schedule_interval=SCHEDULE_INTERVAL,
+    start_date=START_DATE,
+    catchup=False,
+)
+
+bash_tableau_dash = BashOperator(
+    # ssh_conn_id='umr_cps_prod',
+     task_id='tableau_dashboard_op',
+     bash_command = '/mapr/datalake/uhc/ei/umr_cobis_prod/users/skhandel/scripts/dash.sh ',
+     #provide_context=True,
+     dag=dag,
+)
+
+t1
+#success_email_body = f"""
+#Hi, <br><br>
+#DB2_SSH_TEST DAG has been executed successfully at {datetime.now()}.
+#"""
+#send_mail = EmailOperator(
+#    task_id="send_mail",
+#    to=dag_email_recipient,
+#    subject='Airflow Success: SSHTest',
+#    html_content=success_email_body,
+#    dag=dag)
+
+#t1 >> send_mail

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: epim-pv
+  namespace: umrcps-k8-stg
+spec:
+  storageClassName: nas-thin-2
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
