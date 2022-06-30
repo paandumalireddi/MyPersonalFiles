@@ -1,0 +1,12 @@
+100*400=40000
+mestri+ vadrangi=150000
+reku=100000
+iron=75000
+pikka+isaka=20000
+bolts=12000
+thativasam=70000
+mekulu=10000
+current=30000
+
+
+

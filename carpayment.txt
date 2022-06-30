@@ -1,0 +1,5 @@
+On road price is : 		903233
+bank loan processed is:	748057
+Remaining total amount :155176
+Already transfered is: 61100
+Need to transfer is :  94076 
